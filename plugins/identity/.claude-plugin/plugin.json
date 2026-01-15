@@ -1,0 +1,21 @@
+{
+  "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
+  "name": "identity",
+  "version": "1.0.0",
+  "description": "A system for intentional identity change based on Dan Koe's methodology. Includes transformation sessions, daily interrupts, and weekly synthesis for tracking progress over time.",
+  "author": {
+    "name": "xexr",
+    "email": "xexr@xexr.com"
+  },
+  "homepage": "https://github.com/xexr/marketplace",
+  "repository": "https://github.com/xexr/marketplace",
+  "license": "MIT",
+  "keywords": [
+    "identity",
+    "personal-development",
+    "habits",
+    "self-improvement",
+    "transformation",
+    "reflection"
+  ]
+}

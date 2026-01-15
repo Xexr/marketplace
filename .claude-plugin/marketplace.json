@@ -1,0 +1,23 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "xexr-marketplace",
+  "version": "1.0.0",
+  "description": "Personal plugins and skills for Claude Code",
+  "owner": {
+    "name": "xexr",
+    "email": "xexr@xexr.com"
+  },
+  "plugins": [
+    {
+      "name": "identity",
+      "description": "A system for intentional identity change - transformation sessions, daily interrupts, and weekly synthesis",
+      "version": "1.0.0",
+      "author": {
+        "name": "xexr",
+        "email": "xexr@xexr.com"
+      },
+      "source": "./plugins/identity",
+      "category": "productivity"
+    }
+  ]
+}
