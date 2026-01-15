@@ -1,5 +1,4 @@
 {
-  "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
   "name": "identity",
   "version": "1.0.0",
   "description": "A system for intentional identity change based on Dan Koe's methodology. Includes transformation sessions, daily interrupts, and weekly synthesis for tracking progress over time.",
