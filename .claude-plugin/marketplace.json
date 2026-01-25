@@ -18,6 +18,17 @@
       },
       "source": "./plugins/identity",
       "category": "productivity"
+    },
+    {
+      "name": "design-to-beads",
+      "description": "Convert design documents, PRDs, and task lists into beads issues with lossless conversion and validated dependencies",
+      "version": "1.0.0",
+      "author": {
+        "name": "xexr",
+        "email": "xexr@xexr.com"
+      },
+      "source": "./plugins/design-to-beads",
+      "category": "productivity"
     }
   ]
 }

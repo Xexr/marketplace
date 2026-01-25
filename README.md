@@ -80,6 +80,54 @@ The interrupts are where the real work happens - daily friction against the old 
 
 This isn't a productivity hack. It's identity work with a feedback loop.
 
+---
+
+### Design to Beads
+
+Convert design documents, PRDs, and task lists into beads issues with lossless conversion, proper epic hierarchy, and validated dependencies.
+
+**Install:**
+```
+/plugin install design-to-beads@xexr-marketplace
+```
+
+#### The Core Principle
+
+Every piece of actionable content in the source document must map to a beads issue. Nothing gets lost. Dependencies must enable maximum parallelization. Three independent subagent reviews catch what self-review misses.
+
+#### How It Works
+
+The plugin follows a rigorous six-phase process:
+
+1. **Analyze** - Read the entire document, identify epics (phases, features, components) and issues (actionable items)
+
+2. **Draft** - Create a written structure with a coverage matrix ensuring every source section maps to a beads location. Track detail density to catch information loss.
+
+3. **Review** - Three mandatory subagent review passes:
+   - Pass 1: Completeness + detail density
+   - Pass 2: Dependencies (catch false sequencing, backward phase deps)
+   - Pass 3: Clarity + implementation readiness
+
+4. **Checkpoint** - Present final structure for user approval before creating anything
+
+5. **Execute** - Create epics, then issues with parent-child links, then blocker dependencies
+
+6. **Report** - Summary, dependency graph, ready work queue, coverage verification
+
+#### Critical Rules
+
+- DO NOT rush - quality conversion prevents downstream delays
+- DO NOT skip review passes - single-pass creation misses gaps
+- DO NOT self-review - launch subagents for each pass
+- DO NOT assume sequential ordering - prove each blocker
+- DO NOT create sparse issues - if source has detail, issue must have detail
+
+#### Commands
+
+| Command | Purpose |
+|---------|---------|
+| `/design-to-beads` | Convert a design document to beads issues |
+
 ## License
 
 MIT

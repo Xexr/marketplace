@@ -1,0 +1,22 @@
+{
+  "name": "design-to-beads",
+  "version": "1.0.0",
+  "description": "Convert design documents, PRDs, and task lists into beads issues with lossless conversion, proper epic hierarchy, validated dependencies, and three independent subagent review passes.",
+  "author": {
+    "name": "xexr",
+    "email": "xexr@xexr.com"
+  },
+  "homepage": "https://github.com/xexr/marketplace",
+  "repository": "https://github.com/xexr/marketplace",
+  "license": "MIT",
+  "keywords": [
+    "beads",
+    "issue-tracking",
+    "project-management",
+    "prd",
+    "design-docs",
+    "task-management",
+    "dependencies",
+    "workflow"
+  ]
+}
