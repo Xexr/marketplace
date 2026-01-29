@@ -29,6 +29,28 @@
       },
       "source": "./plugins/design-to-beads",
       "category": "productivity"
+    },
+    {
+      "name": "review-documentation",
+      "description": "Multi-LLM documentation review for catching inconsistencies, codebase mismatches, and gaps with parallel Opus/GPT/Gemini dispatch",
+      "version": "1.0.0",
+      "author": {
+        "name": "xexr",
+        "email": "xexr@xexr.com"
+      },
+      "source": "./plugins/review-documentation",
+      "category": "productivity"
+    },
+    {
+      "name": "review-implementation",
+      "description": "Multi-LLM implementation review for verifying code matches spec, completion tracking, and gap identification with parallel Opus/GPT/Gemini dispatch",
+      "version": "1.0.0",
+      "author": {
+        "name": "xexr",
+        "email": "xexr@xexr.com"
+      },
+      "source": "./plugins/review-implementation",
+      "category": "productivity"
     }
   ]
 }

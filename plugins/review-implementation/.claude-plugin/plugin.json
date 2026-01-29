@@ -1,0 +1,25 @@
+{
+  "name": "review-implementation",
+  "version": "1.0.0",
+  "description": "Multi-LLM implementation review for verifying code matches spec, identifying gaps, and tracking completion state. Supports Opus, GPT, and Gemini in parallel.",
+  "author": {
+    "name": "xexr",
+    "email": "xexr@xexr.com"
+  },
+  "homepage": "https://github.com/xexr/marketplace",
+  "repository": "https://github.com/xexr/marketplace",
+  "license": "MIT",
+  "keywords": [
+    "implementation",
+    "review",
+    "multi-llm",
+    "verification",
+    "spec-compliance",
+    "beads",
+    "completion-tracking",
+    "acceptance-criteria",
+    "opus",
+    "gpt",
+    "gemini"
+  ]
+}

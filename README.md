@@ -128,6 +128,101 @@ The plugin follows a rigorous six-phase process:
 |---------|---------|
 | `/design-to-beads` | Convert a design document to beads issues |
 
+---
+
+### Review Documentation
+
+Multi-LLM documentation review for catching inconsistencies, codebase mismatches, and gaps. Supports Opus, GPT, and Gemini in parallel with synthesis and guided resolution.
+
+**Install:**
+```
+/plugin install review-documentation@xexr-marketplace
+```
+
+#### The Core Principle
+
+One LLM misses things. Multiple LLMs catch each other's blind spots. This plugin dispatches up to three models (Opus, GPT, Gemini) to review your documentation in parallel, then synthesizes their findings into a single actionable report.
+
+#### How It Works
+
+The plugin follows a five-phase process:
+
+1. **Scope & Configuration** - Quick questions: what to review, which models, which categories (accuracy, design, robustness)
+
+2. **Path Discovery** - A fast Haiku agent discovers relevant files and beads issues from your description
+
+3. **Parallel Review** - Selected models review simultaneously (10-15 min). Each gets the review brief, pre-read beads issues, and codebase access
+
+4. **Synthesis** - Results merged into:
+   - Deduplicated issues by severity
+   - Agent comparison table
+   - Reasoning for each finding
+   - Ambiguities requiring human input
+
+5. **Resolution** - Choose actions: create beads issues, save to markdown, fix docs, or fix code
+
+#### Requirements
+
+- Claude Code (Opus 4.5 always available)
+- Optional: [Codex CLI](https://github.com/openai/codex) for GPT reviews
+- Optional: [Gemini CLI](https://github.com/google/gemini-cli) for Gemini reviews
+
+Works with just Opus, but cross-validation catches more issues.
+
+#### Commands
+
+| Command | Purpose |
+|---------|---------|
+| `/review-documentation` | Review documentation for issues |
+
+---
+
+### Review Implementation
+
+Multi-LLM implementation review for verifying code matches spec, identifying gaps, and tracking completion state. Supports Opus, GPT, and Gemini in parallel.
+
+**Install:**
+```
+/plugin install review-implementation@xexr-marketplace
+```
+
+#### The Core Principle
+
+Code should match spec. This plugin verifies implementation against requirements, produces a completion matrix showing what's done/partial/missing, and helps you close the gaps.
+
+#### How It Works
+
+The plugin follows a five-phase process:
+
+1. **Scope & Configuration** - Define spec scope (epic, spec file) and implementation scope (branch, directory), select models and categories
+
+2. **Path Discovery** - Haiku discovers spec files, implementation files, and test files
+
+3. **Parallel Review** - Models compare implementation against spec requirement-by-requirement
+
+4. **Synthesis** - Results merged into completion matrix, summary stats, and risk-weighted issues
+
+5. **Resolution** - Create tracking issues, update specs, mark tasks complete, or fix gaps directly
+
+#### Sequential with Review Documentation
+
+Use these plugins together:
+1. `/review-documentation` - Ensure spec is accurate
+2. `/review-implementation` - Ensure code matches spec
+
+#### Preflight Mode
+
+Can be invoked with args for automation:
+```bash
+/review-implementation --models opus,gpt --categories all --scope-spec "epic cgt-22" --scope-impl "this branch"
+```
+
+#### Commands
+
+| Command | Purpose |
+|---------|---------|
+| `/review-implementation` | Review implementation against spec |
+
 ## License
 
 MIT

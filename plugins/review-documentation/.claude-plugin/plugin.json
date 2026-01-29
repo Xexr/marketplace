@@ -1,0 +1,25 @@
+{
+  "name": "review-documentation",
+  "version": "1.0.0",
+  "description": "Multi-LLM documentation review for catching inconsistencies, codebase mismatches, and gaps. Supports Opus, GPT, and Gemini in parallel with synthesis and guided resolution.",
+  "author": {
+    "name": "xexr",
+    "email": "xexr@xexr.com"
+  },
+  "homepage": "https://github.com/xexr/marketplace",
+  "repository": "https://github.com/xexr/marketplace",
+  "license": "MIT",
+  "keywords": [
+    "documentation",
+    "review",
+    "multi-llm",
+    "quality-assurance",
+    "beads",
+    "specs",
+    "prd",
+    "validation",
+    "opus",
+    "gpt",
+    "gemini"
+  ]
+}
