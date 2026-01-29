@@ -2,6 +2,15 @@
 
 Personal plugins and skills for Claude Code.
 
+## Overview
+
+| Plugin | Description |
+|--------|-------------|
+| [Identity](#identity) | A system for intentional identity change through transformation sessions, daily interrupts, and weekly synthesis. |
+| [Design to Beads](#design-to-beads) | Convert design documents and PRDs into beads issues with lossless conversion and validated dependencies. |
+| [Review Documentation](#review-documentation) | Multi-LLM documentation review for catching inconsistencies and codebase mismatches. |
+| [Review Implementation](#review-implementation) | Multi-LLM implementation review for verifying code matches spec and tracking completion. |
+
 ## Installation
 
 Add this marketplace to Claude Code:
