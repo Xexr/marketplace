@@ -228,7 +228,7 @@ If the user selects Gemini 3 Pro, verify Gemini CLI is available **before procee
 command -v gemini >/dev/null 2>&1 || { echo "Gemini CLI not installed"; exit 1; }
 
 # Test the actual model
-gemini "Respond with only: READY" --model gemini-3-pro-preview --sandbox -y 2>&1
+gemini "Respond with only: READY" --model gemini-3-pro-preview -y 2>&1
 ```
 
 **If check fails, STOP and tell the user:**
@@ -759,7 +759,7 @@ PROMPT
 
 **Pre-read beads issues are included in the prompt for faster review. Gemini can explore additional issues if needed.**
 
-**IMPORTANT: Gemini runs in `permissive-open` sandbox mode by default (allows writes to project folder). The prompt explicitly instructs Gemini NOT to modify files during review phase.**
+**IMPORTANT: Gemini runs without sandbox (docker/podman not required). The prompt explicitly instructs Gemini NOT to modify files during review phase.**
 
 **Step 1: Write prompt to temp file (first Bash call)**
 
@@ -836,13 +836,13 @@ GEMINI_PROMPT
 #   run_in_background: true     <-- REQUIRED FOR PARALLEL EXECUTION
 #   timeout: 900000             <-- 15 minutes
 
-gemini "$(cat /tmp/gemini_review_prompt.txt)" --model gemini-3-pro-preview --sandbox -y && rm /tmp/gemini_review_prompt.txt
+gemini "$(cat /tmp/gemini_review_prompt.txt)" --model gemini-3-pro-preview -y && rm /tmp/gemini_review_prompt.txt
 ```
 
 **Notes on Gemini CLI:**
 
 - Model: `gemini-3-pro-preview`
-- `--sandbox` uses `permissive-open` mode by default (allows writes to project folder, but prompt prohibits modifications)
+- Runs without sandbox (prompt prohibits file modifications)
 - **Timeout:** Set Bash timeout to 15 minutes (`timeout: 900000` ms)
 - **Background:** Use `run_in_background: true` on the Bash call - THIS IS CRITICAL
 - The `&& rm` cleanup runs after Gemini completes
@@ -1214,7 +1214,7 @@ options:
 | **Unquoted special paths** | Always single-quote paths with `()`, `[]`, or spaces |
 | **Treating sandbox stderr as errors** | Homebrew/profile errors in stderr are ignorable - check exit codes instead |
 | **Sequential pre-flight checks** | Run GPT and Gemini pre-flight checks IN PARALLEL, not sequentially |
-| **Gemini sandbox writes** | Gemini uses `permissive-open` sandbox - prompt explicitly prohibits file modifications |
+| **Gemini file modifications** | Gemini runs unsandboxed - prompt explicitly prohibits file modifications during review |
 | **Inline Gemini HEREDOC** | Use TWO-STEP temp file approach - write prompt to file first, then call gemini |
 | **Sequential TaskOutput calls** | Call ALL TaskOutput in ONE message for parallel collection |
 | **Extra exploration after collection** | Proceed IMMEDIATELY to synthesis - don't supplement with your own reads |
