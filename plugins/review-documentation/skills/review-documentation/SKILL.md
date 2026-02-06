@@ -32,7 +32,7 @@ flowchart TD
     haiku[Step 2: Haiku gathers paths]
     build_brief[Build dynamic DO CHECK / DO NOT CHECK brief]
     dispatch[Step 3: Dispatch reviewers IN PARALLEL]
-    opus[Opus 4.5 sub-agent]
+    opus[Opus 4.6 sub-agent]
     gpt[Codex CLI GPT sub-agent]
     gemini[Gemini CLI sub-agent]
     collect[Collect results via TaskOutput]
@@ -93,7 +93,7 @@ flowchart TD
 command -v codex >/dev/null 2>&1 || { echo "Codex CLI not installed"; exit 1; }
 
 # Test the actual model - this validates auth AND model availability
-codex exec -m "gpt-5.2-codex" -c reasoning_effort="high" --sandbox workspace-write "Respond with only: READY" 2>&1
+codex exec -m "gpt-5.3-codex" -c reasoning_effort="high" --sandbox workspace-write "Respond with only: READY" 2>&1
 ```
 
 **Check the output for:**
@@ -103,7 +103,7 @@ codex exec -m "gpt-5.2-codex" -c reasoning_effort="high" --sandbox workspace-wri
 
 **If check fails, STOP and tell the user:**
 
-> "Codex CLI check failed. Either the CLI is not installed, you're not logged in (`codex login`), or the gpt-5.2-codex model is not available with your account. Select Opus 4.5 only for this review, or fix your Codex setup first."
+> "Codex CLI check failed. Either the CLI is not installed, you're not logged in (`codex login`), or the gpt-5.3-codex model is not available with your account. Select Opus 4.6 only for this review, or fix your Codex setup first."
 
 ### Gemini Pre-flight (if Gemini selected)
 
@@ -122,7 +122,7 @@ gemini "Respond with only: READY" --model gemini-3-pro-preview --sandbox -y 2>&1
 
 **If check fails, STOP and tell the user:**
 
-> "Gemini CLI check failed. Select Opus 4.5 only, or fix your Gemini setup first."
+> "Gemini CLI check failed. Select Opus 4.6 only, or fix your Gemini setup first."
 
 **Do NOT dispatch any sub-agents until all pre-flight checks pass.**
 
@@ -147,8 +147,8 @@ questions: [
     header: "Models",
     multiSelect: true,
     options: [
-      { label: "Opus 4.5 (Recommended)", description: "Claude Opus 4.5 - strong reasoning, nuanced analysis" },
-      { label: "GPT 5.2 Codex", description: "OpenAI's latest via Codex CLI - different perspective" },
+      { label: "Opus 4.6 (Recommended)", description: "Claude Opus 4.6 - strong reasoning, nuanced analysis" },
+      { label: "GPT 5.3 Codex", description: "OpenAI's latest via Codex CLI - different perspective" },
       { label: "Gemini 3 Pro", description: "Google's latest via Gemini CLI - third perspective" }
     ]
   },
@@ -303,7 +303,7 @@ Target codebase: [PATH]
 Return ONLY a structured list of paths. Do NOT read file contents.
 
 Look in:
-- .beads/ directory for matching issue IDs (use bd list --limit 0 to find relevant IDs)
+- .beads/ directory for matching issue IDs (use bd list to find relevant IDs)
 - specs/ or docs/ directories for matching markdown files
 - CLAUDE.md, README.md, or similar project docs
 - Any paths explicitly mentioned in the scope description
@@ -548,7 +548,6 @@ Target codebase: /path/to/project
 The main beads issues are provided above. If you need to explore dependencies or linked issues:
 - bd show <id> - View issue details
 - bd dep show <id> - View issue dependencies
-- bd list --status=open --limit 0 - List all open issues (default limit is 50)
 
 Use Read tool for markdown files.
 Explore the codebase as needed to validate documentation accuracy.
@@ -567,7 +566,7 @@ REMINDER: This is a READ-ONLY review phase. Do NOT modify any files. Changes are
 #   run_in_background: true    <-- REQUIRED FOR PARALLEL EXECUTION
 #   timeout: 900000            <-- 15 minutes (GPT reviews can take time)
 
-codex exec -m "gpt-5.2-codex" -c reasoning_effort="high" --sandbox workspace-write "$(cat <<'PROMPT'
+codex exec -m "gpt-5.3-codex" -c reasoning_effort="high" --sandbox workspace-write "$(cat <<'PROMPT'
 [Sub-agent brief above]
 
 Documentation to review:
@@ -585,7 +584,7 @@ Target codebase: [current working directory]
 The main beads issues are provided above. If you need to explore dependencies or linked issues:
 - bd show <id> - View issue details
 - bd dep show <id> - View issue dependencies
-- bd list --status=open --limit 0 - List all open issues (default limit is 50)
+- bd list --status=open - List open issues
 
 ## Shell Command Best Practices
 
@@ -635,7 +634,7 @@ PROMPT
 
 **Notes on Codex CLI:**
 
-- Model: `gpt-5.2-codex` with high reasoning effort
+- Model: `gpt-5.3-codex` with high reasoning effort
 - `--sandbox workspace-write` - can read/write files in workspace, run shell commands (including `bd` which needs SQLite WAL write access)
 - **Timeout:** Set Bash timeout to 15 minutes (`timeout: 900000` ms) - GPT reviews can take time
 - **Background:** Use `run_in_background: true` on the Bash call - THIS IS CRITICAL
@@ -675,7 +674,7 @@ Target codebase: [current working directory]
 The main beads issues are provided above. If you need to explore dependencies or linked issues:
 - bd show <id> - View issue details
 - bd dep show <id> - View issue dependencies
-- bd list --status=open --limit 0 - List all open issues (default limit is 50)
+- bd list --status=open - List open issues
 
 ## Shell Command Best Practices
 
@@ -963,7 +962,7 @@ List any:
 
 ## Review Configuration
 
-- **LLMs Used:** [Opus 4.5 / GPT 5.2 Codex / Gemini 3 Pro] (single agent)
+- **LLMs Used:** [Opus 4.6 / GPT 5.3 Codex / Gemini 3 Pro] (single agent)
 - **Documents Reviewed:** [List]
 - **Codebase:** [Path or N/A]
 - **Note:** Cross-validation not performed (single agent review)

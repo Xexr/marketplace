@@ -137,7 +137,7 @@ flowchart TD
     haiku[Step 2: Haiku gathers spec paths + implementation paths]
     build_brief[Build dynamic review brief]
     dispatch[Step 3: Dispatch reviewers IN PARALLEL]
-    opus[Opus 4.5 sub-agent]
+    opus[Opus 4.6 sub-agent]
     gpt[Codex CLI GPT sub-agent]
     gemini[Gemini CLI sub-agent]
     collect[Collect results via TaskOutput]
@@ -205,19 +205,19 @@ flowchart TD
 
 ### GPT Pre-flight (if GPT selected)
 
-If the user selects GPT 5.2 Codex, verify Codex CLI is available **before proceeding**:
+If the user selects GPT 5.3 Codex, verify Codex CLI is available **before proceeding**:
 
 ```bash
 # Check Codex CLI is installed
 command -v codex >/dev/null 2>&1 || { echo "Codex CLI not installed"; exit 1; }
 
 # Test the actual model
-codex exec -m "gpt-5.2-codex" -c reasoning_effort="high" --sandbox read-only "Respond with only: READY" 2>&1
+codex exec -m "gpt-5.3-codex" -c reasoning_effort="high" --sandbox read-only "Respond with only: READY" 2>&1
 ```
 
 **If check fails, STOP and tell the user:**
 
-> "Codex CLI check failed. Select Opus 4.5 only, or fix your Codex setup first."
+> "Codex CLI check failed. Select Opus 4.6 only, or fix your Codex setup first."
 
 ### Gemini Pre-flight (if Gemini selected)
 
@@ -233,7 +233,7 @@ gemini "Respond with only: READY" --model gemini-3-pro-preview --sandbox -y 2>&1
 
 **If check fails, STOP and tell the user:**
 
-> "Gemini CLI check failed. Select Opus 4.5 only, or fix your Gemini setup first."
+> "Gemini CLI check failed. Select Opus 4.6 only, or fix your Gemini setup first."
 
 ## Step 1: Get Scope from User (FAST)
 
@@ -261,8 +261,8 @@ questions: [
     header: "Models",
     multiSelect: true,
     options: [
-      { label: "Opus 4.5 (Recommended)", description: "Claude Opus 4.5 - strong reasoning, nuanced analysis" },
-      { label: "GPT 5.2 Codex", description: "OpenAI's latest via Codex CLI - different perspective" },
+      { label: "Opus 4.6 (Recommended)", description: "Claude Opus 4.6 - strong reasoning, nuanced analysis" },
+      { label: "GPT 5.3 Codex", description: "OpenAI's latest via Codex CLI - different perspective" },
       { label: "Gemini 3 Pro", description: "Google's latest via Gemini CLI - third perspective" }
     ]
   },
@@ -420,12 +420,12 @@ Return ONLY structured lists of paths. Do NOT read file contents.
 ## DISAMBIGUATION CHECK (CRITICAL)
 
 Before returning paths, check if multiple epics/specs match the scope description.
-- Run `bd list --limit 0` and search for matching issues
+- Run `bd list` and search for matching issues
 - If the scope mentions 'Phase X' or similar, check ALL epics that mention that phase
 - If multiple matches exist, return DISAMBIGUATION_NEEDED: true with list of candidates
 
 Look for SPEC paths in:
-- .beads/ directory for matching issue IDs (use bd list --limit 0 to find relevant IDs)
+- .beads/ directory for matching issue IDs (use bd list to find relevant IDs)
 - specs/ or docs/ directories for matching markdown files
 - Any paths explicitly mentioned in scope description
 
@@ -668,7 +668,7 @@ Target codebase: /path/to/project
 The main spec issues are provided above. If you need to explore dependencies or linked issues:
 - bd show <id> - View issue details
 - bd dep show <id> - View issue dependencies
-- bd list --status=open --limit 0 - List all open issues (default limit is 50)
+- bd list --status=open - List open issues
 
 Use Read tool for all source files.
 Compare spec requirements against actual implementation.
@@ -684,7 +684,7 @@ REMINDER: This is a READ-ONLY review. Do NOT modify any files - no Edit or Write
 ```bash
 # Bash tool call with run_in_background: true, timeout: 900000 (15 minutes)
 
-codex exec -m "gpt-5.2-codex" -c reasoning_effort="high" --sandbox workspace-write "$(cat <<'PROMPT'
+codex exec -m "gpt-5.3-codex" -c reasoning_effort="high" --sandbox workspace-write "$(cat <<'PROMPT'
 [Sub-agent brief above]
 
 SPECIFICATION to review against:
@@ -703,7 +703,7 @@ IMPLEMENTATION to review:
 The main spec issues are provided above. If you need to explore dependencies or linked issues:
 - bd show <id> - View issue details
 - bd dep show <id> - View issue dependencies
-- bd list --status=open --limit 0 - List all open issues (default limit is 50)
+- bd list --status=open - List open issues
 
 ## Shell Command Best Practices
 
@@ -788,7 +788,7 @@ IMPLEMENTATION to review:
 The main spec issues are provided above. If you need to explore dependencies or linked issues:
 - bd show <id> - View issue details
 - bd dep show <id> - View issue dependencies
-- bd list --status=open --limit 0 - List all open issues (default limit is 50)
+- bd list --status=open - List open issues
 
 ## Shell Command Best Practices
 

@@ -30,10 +30,10 @@ Then install the plugin:
 ## Requirements
 
 **Required:**
-- Claude Code (Opus 4.5 always available)
+- Claude Code (Opus 4.6 always available)
 
 **Optional (for multi-LLM comparison):**
-- [Codex CLI](https://github.com/openai/codex) - for GPT 5.2 Codex reviews
+- [Codex CLI](https://github.com/openai/codex) - for GPT 5.3 Codex reviews
 - [Gemini CLI](https://github.com/google/gemini-cli) - for Gemini 3 Pro reviews
 
 ## The Process

@@ -172,7 +172,7 @@ The plugin follows a five-phase process:
 
 #### Requirements
 
-- Claude Code (Opus 4.5 always available)
+- Claude Code (Opus 4.6 always available)
 - Optional: [Codex CLI](https://github.com/openai/codex) for GPT reviews
 - Optional: [Gemini CLI](https://github.com/google/gemini-cli) for Gemini reviews
 
