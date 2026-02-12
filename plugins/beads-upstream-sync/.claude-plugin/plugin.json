@@ -1,0 +1,22 @@
+{
+  "name": "beads-upstream-sync",
+  "version": "1.0.0",
+  "description": "Fork maintenance for beads (steveyegge/beads) - upstream sync, cherry-pick management, binary rebuild, and branch cleanup with auto-detected environment configuration.",
+  "author": {
+    "name": "xexr",
+    "email": "xexr@xexr.com"
+  },
+  "homepage": "https://github.com/xexr/marketplace",
+  "repository": "https://github.com/xexr/marketplace",
+  "license": "MIT",
+  "keywords": [
+    "beads",
+    "upstream-sync",
+    "fork-maintenance",
+    "rebase",
+    "cherry-pick",
+    "git",
+    "go",
+    "binary-rebuild"
+  ]
+}

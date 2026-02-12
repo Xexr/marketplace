@@ -10,6 +10,8 @@ Personal plugins and skills for Claude Code.
 | [Design to Beads](#design-to-beads) | Convert design documents and PRDs into beads issues with lossless conversion and validated dependencies. |
 | [Review Documentation](#review-documentation) | Multi-LLM documentation review for catching inconsistencies and codebase mismatches. |
 | [Review Implementation](#review-implementation) | Multi-LLM implementation review for verifying code matches spec and tracking completion. |
+| [Beads Upstream Sync](#beads-upstream-sync) | Fork maintenance for beads - upstream sync, cherry-pick management, and branch cleanup. |
+| [Gastown Upstream Sync](#gastown-upstream-sync) | Fork maintenance for gastown - upstream sync, cherry-pick management, formula sync, and branch cleanup. |
 
 ## Installation
 
@@ -231,6 +233,104 @@ Can be invoked with args for automation:
 | Command | Purpose |
 |---------|---------|
 | `/review-implementation` | Review implementation against spec |
+
+---
+
+### Beads Upstream Sync
+
+Fork maintenance for your beads fork (steveyegge/beads) - upstream sync, cherry-pick management, binary rebuild, and branch cleanup.
+
+**Install:**
+```
+/plugin install beads-upstream-sync@xexr-marketplace
+```
+
+#### The Core Principle
+
+PR branches are the source of truth. Cherry-picks on main are copies. Conflicts are always resolved on the PR branch first, then the fixed version is brought back to main.
+
+#### Auto-Detection
+
+The skill auto-detects your environment before starting:
+
+| Value | Detection Method |
+|-------|-----------------|
+| Fork owner | Parsed from `git remote get-url origin` |
+| Crew name | Parsed from current working directory |
+| DCG installed | `command -v dcg` |
+
+You confirm or correct these values before the sync begins.
+
+#### How It Works
+
+An 11-step process covering the full sync lifecycle:
+
+1. **Discovery** - Detect fork owner, crew name, DCG presence
+2. **Fetch & Analyze** - Compare upstream, identify merged/unmerged PRs
+3. **Rebase Main** - Drop merged cherry-picks, replay unmerged ones
+4. **Rebase PR Branches** - Update active branches against upstream
+5. **Build & Test** - Catch compilation errors and package-level collisions
+6. **Checkpoint** - Full summary for user approval before any push
+7. **Push** - Main and PR branches (force-with-lease where needed)
+8. **Rebuild Binary** - `make install` and verify with `bd version`
+9. **Update Clones** - Sync mayor and refinery rig directories
+10. **Clean Up** - Delete merged branches, prune stale refs
+11. **Doctor & Summarize** - Post-upgrade checks and upstream change report
+
+#### Commands
+
+| Command | Purpose |
+|---------|---------|
+| `/beads-upstream-sync` | Sync your beads fork with upstream |
+
+---
+
+### Gastown Upstream Sync
+
+Fork maintenance for your gastown fork (steveyegge/gastown) - upstream sync, cherry-pick management, binary rebuild, formula sync, and branch cleanup.
+
+**Install:**
+```
+/plugin install gastown-upstream-sync@xexr-marketplace
+```
+
+#### The Core Principle
+
+PR branches are the source of truth. Cherry-picks on main are copies. Conflicts are always resolved on the PR branch first, then the fixed version is brought back to main.
+
+#### Auto-Detection
+
+The skill auto-detects your environment before starting:
+
+| Value | Detection Method |
+|-------|-----------------|
+| Fork owner | Parsed from `git remote get-url origin` |
+| Crew name | Parsed from current working directory |
+| DCG installed | `command -v dcg` |
+
+You confirm or correct these values before the sync begins.
+
+#### How It Works
+
+An 11-step process covering the full sync lifecycle:
+
+1. **Discovery** - Detect fork owner, crew name, DCG presence
+2. **Fetch & Analyze** - Compare upstream, identify merged/unmerged PRs
+3. **Rebase Main** - Drop merged cherry-picks, replay unmerged ones
+4. **Rebase PR Branches** - Update active branches against upstream
+5. **Build & Test** - Catch compilation errors, package-level collisions, formula drift
+6. **Checkpoint** - Full summary for user approval before any push
+7. **Push** - Main and PR branches (force-with-lease where needed)
+8. **Rebuild Binary** - `make install` and verify with `gt version`
+9. **Update Clones** - Sync mayor and refinery rig directories
+10. **Clean Up** - Delete merged branches, prune stale refs
+11. **Formulas, Doctor & Summarize** - Sync formulas, post-upgrade checks, upstream change report
+
+#### Commands
+
+| Command | Purpose |
+|---------|---------|
+| `/gastown-upstream-sync` | Sync your gastown fork with upstream |
 
 ## License
 

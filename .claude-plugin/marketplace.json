@@ -51,6 +51,28 @@
       },
       "source": "./plugins/review-implementation",
       "category": "productivity"
+    },
+    {
+      "name": "beads-upstream-sync",
+      "description": "Fork maintenance for beads (steveyegge/beads) - upstream sync, cherry-pick management, binary rebuild, and branch cleanup",
+      "version": "1.0.0",
+      "author": {
+        "name": "xexr",
+        "email": "xexr@xexr.com"
+      },
+      "source": "./plugins/beads-upstream-sync",
+      "category": "productivity"
+    },
+    {
+      "name": "gastown-upstream-sync",
+      "description": "Fork maintenance for gastown (steveyegge/gastown) - upstream sync, cherry-pick management, binary rebuild, formula sync, and branch cleanup",
+      "version": "1.0.0",
+      "author": {
+        "name": "xexr",
+        "email": "xexr@xexr.com"
+      },
+      "source": "./plugins/gastown-upstream-sync",
+      "category": "productivity"
     }
   ]
 }
