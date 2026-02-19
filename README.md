@@ -12,6 +12,7 @@ Personal plugins and skills for Claude Code.
 | [Review Implementation](#review-implementation) | Multi-LLM implementation review for verifying code matches spec and tracking completion. |
 | [Beads Upstream Sync](#beads-upstream-sync) | Fork maintenance for beads - upstream sync, cherry-pick management, and branch cleanup. |
 | [Gastown Upstream Sync](#gastown-upstream-sync) | Fork maintenance for gastown - upstream sync, cherry-pick management, formula sync, and branch cleanup. |
+| [Gastown Rig Setup](#gastown-rig-setup) | Add Git repos as Gas Town rigs with Dolt-native beads, including .beads/ seeding workaround. |
 
 ## Installation
 
@@ -331,6 +332,47 @@ An 11-step process covering the full sync lifecycle:
 | Command | Purpose |
 |---------|---------|
 | `/gastown-upstream-sync` | Sync your gastown fork with upstream |
+
+---
+
+### Gastown Rig Setup
+
+Add Git repositories as Gas Town rigs with Dolt-native beads integration. Handles `.beads/` seeding, rig creation, Dolt initialization, and remote configuration.
+
+**Install:**
+```
+/plugin install gastown-rig-setup@xexr-marketplace
+```
+
+#### The Core Principle
+
+`.beads/` must be seeded in the upstream repo before running `gt rig add`. Without seeding, `bd init` writes a mismatched database name (`beads_<prefix>` instead of the actual rig name), breaking Dolt connectivity.
+
+#### How It Works
+
+A 9-step process covering the full rig onboarding lifecycle:
+
+1. **Clone** - Clone the repo into `~/projects/`
+2. **Seed `.beads/`** - Create minimal `.beads/` with correct `dolt_database` value in `metadata.json`
+3. **Commit & Push** - Push `.beads/` so `gt rig add` clones pick it up
+4. **Add Rig** - `gt rig add <name> <url> --prefix <prefix>`
+5. **Init Dolt** - `gt dolt init-rig <name>` + restart Dolt server
+6. **Configure Remote** - Set up local Dolt remote for the new database
+7. **Verify Config** - Check `config.json`, `.beads/redirect`, `metadata.json`
+8. **Run Diagnostics** - `bd doctor` and `gt doctor`
+9. **Verification Checklist** - Confirm rig list, dolt list, bd list, remotes
+
+#### Known Issues
+
+**Database naming bug (why seeding is required):** The unseeded code path in `gt rig add` triggers `bd init --server` which writes `dolt_database: "beads_<prefix>"`, but the actual Dolt database is named `<rigName>`. This mismatch prevents `bd` from connecting. Seeding `.beads/` with the correct `dolt_database` value prevents this bug.
+
+**`bd doctor` false positive:** In server mode, `bd doctor` reports `No dolt database found` because it checks for a local `.beads/dolt/` directory that doesn't exist with the centralized Dolt server. This is cosmetic only. Use `bd list` to verify actual connectivity.
+
+#### Commands
+
+| Command | Purpose |
+|---------|---------|
+| `/gastown-rig-setup` | Add a new Git repository as a Gas Town rig |
 
 ## License
 

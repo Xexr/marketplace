@@ -73,6 +73,17 @@
       },
       "source": "./plugins/gastown-upstream-sync",
       "category": "productivity"
+    },
+    {
+      "name": "gastown-rig-setup",
+      "description": "Add Git repositories as Gas Town rigs with Dolt-native beads integration, including .beads/ seeding to work around the database naming bug",
+      "version": "1.0.0",
+      "author": {
+        "name": "xexr",
+        "email": "xexr@xexr.com"
+      },
+      "source": "./plugins/gastown-rig-setup",
+      "category": "productivity"
     }
   ]
 }
