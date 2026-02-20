@@ -1086,7 +1086,7 @@ options:
 Ask structure preference (epic with tasks vs individual issues), then create via `bd create`.
 
 **Best practices:**
-- Link new issues to parent issue with `bd dep add <new-id> <parent-id>`
+- Link new issues to parent issue with `--parent` at create time, or `bd dep add <new-id> <parent-id> --type parent-child`
 - Run `bd sync` after creating issues to persist to sync branch
 
 #### If "Update spec to match implementation" selected:

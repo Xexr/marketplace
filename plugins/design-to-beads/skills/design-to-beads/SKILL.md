@@ -155,18 +155,26 @@ Only after user confirmation:
 1. **Create epics first:**
    ```bash
    bd create "Epic title" -t epic -p <priority> -d "Description"
+   # Returns: <epic-id>
    ```
 
-2. **Create issues with parent-child links:**
+2. **Create issues with --parent (preferred):**
    ```bash
    bd create "Issue title" -t task -d "Description" \
+     --parent <epic-id> \
      --acceptance "- [ ] Criterion 1"
-   bd dep add <epic-id> <issue-id> --type parent-child
+   ```
+
+   **Backup** (when epic ID isn't known at create time):
+   ```bash
+   # bd dep add <child-id> <parent-id> = "child depends on parent"
+   bd dep add <issue-id> <epic-id> --type parent-child
    ```
 
 3. **Add blocker dependencies** (only TRUE blockers):
    ```bash
-   bd dep add <prerequisite-id> <dependent-id>
+   # bd dep add <dependent-id> <prerequisite-id> = "dependent depends on prerequisite"
+   bd dep add <dependent-id> <prerequisite-id>
    ```
 
 4. **Verify:**
