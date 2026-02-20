@@ -1,0 +1,24 @@
+{
+  "name": "epic-delivery",
+  "version": "1.0.0",
+  "description": "Orchestrate full delivery of a beads epic through polecats, refinery, and integration branches. The final stage of the design-to-delivery pipeline: gt-toolkit formulas produce the spec and plan, design-to-beads converts the plan into beads issues, and this skill delivers those issues through Gas Town infrastructure.",
+  "author": {
+    "name": "xexr",
+    "email": "xexr@xexr.com"
+  },
+  "homepage": "https://github.com/xexr/marketplace",
+  "repository": "https://github.com/xexr/marketplace",
+  "license": "MIT",
+  "keywords": [
+    "beads",
+    "gas-town",
+    "epic",
+    "delivery",
+    "polecats",
+    "refinery",
+    "integration-branch",
+    "convoy",
+    "merge-queue",
+    "workflow"
+  ]
+}
