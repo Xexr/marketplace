@@ -7,11 +7,11 @@ Orchestrate full delivery of a beads epic through polecats, refinery, and integr
 Epic delivery is the final stage of the **design-to-delivery pipeline**. The earlier stages live in the [gt-toolkit formulas](https://github.com/Xexr/gt-toolkit/tree/main/formulas):
 
 ```
-gt-toolkit formulas          This plugin         Separate step
-─────────────────────        ───────────         ──────────────
-Spec → Plan → Review    →    Beads → Delivery    →    Land to main
-                              ↑                        ↑
-                              design-to-beads          After QA
+gt-toolkit formulas                          Marketplace plugins       Separate step
+───────────────────────────────────          ───────────────────       ──────────────
+Spec → Plan → Review → Beads → Beads Review → Epic Delivery           → Land to main
+                                                                        ↑
+                                                                        After QA
 ```
 
 | Stage | Tool | What it does |
@@ -19,10 +19,11 @@ Spec → Plan → Review    →    Beads → Delivery    →    Land to main
 | 1-4 | `spec-workflow` formula | Scope questions, brainstorm, interview, multimodal review → produces `spec.md` |
 | 5 | `plan-writing` formula | Deep codebase analysis → produces `plan.md` |
 | 6 | `plan-review-to-spec` formula | Verifies plan covers spec → produces `plan-review.md` |
-| 7 | `design-to-beads` plugin | Converts plan into beads epic with validated dependencies |
-| **8** | **`epic-delivery` plugin** | **Delivers the epic through polecats and the refinery** |
+| 7 | `beads-creation` formula | Converts plan into beads epic with validated dependencies |
+| 8 | `beads-review-to-plan` formula | 3-direction review verifying beads match the plan → produces `beads-review.md` |
+| **9** | **`epic-delivery` plugin** | **Delivers the epic through polecats and the refinery** |
 
-The formulas handle *what to build* and *how to build it*. This plugin handles *getting it built* through Gas Town's polecat infrastructure.
+Stages 1-8 handle *what to build* and verify it's captured correctly. This plugin handles *getting it built* through Gas Town's polecat infrastructure.
 
 ## Installation
 

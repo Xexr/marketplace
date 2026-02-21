@@ -161,8 +161,9 @@ Epic delivery is the final stage of the design-to-delivery pipeline. The earlier
 | 1-4 | `spec-workflow` formula | `spec.md` |
 | 5 | `plan-writing` formula | `plan.md` |
 | 6 | `plan-review-to-spec` formula | `plan-review.md` |
-| 7 | `design-to-beads` plugin | Beads epic with validated dependencies |
-| **8** | **`epic-delivery` plugin** | **Delivered code on integration branch** |
+| 7 | `beads-creation` formula | Beads epic with validated dependencies |
+| 8 | `beads-review-to-plan` formula | `beads-review.md` |
+| **9** | **`epic-delivery` plugin** | **Delivered code on integration branch** |
 
 #### How It Works
 
