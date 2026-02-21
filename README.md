@@ -177,8 +177,6 @@ The plugin follows a four-phase process:
 
 4. **Validation** - Verify integration branch, run quality gates (setup, types, lint, build, test), handle failures via bug-fix sub-epics, produce plan-vs-actual summary, and offer deep review via `review-implementation`.
 
-**Critical:** MR merge to the integration branch is the readiness signal, not bead closure. Polecats close beads on `gt done`, but the code hasn't landed until the refinery merges the MR.
-
 #### Commands
 
 | Command | Purpose |
