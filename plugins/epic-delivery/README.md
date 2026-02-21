@@ -17,10 +17,8 @@ Spec → Plan → Review → Beads → Beads Review → Epic Delivery           
 | Stage | Tool | What it does |
 |-------|------|-------------|
 | 1-4 | `spec-workflow` formula | Scope questions, brainstorm, interview, multimodal review → produces `spec.md` |
-| 5 | `plan-writing` formula | Deep codebase analysis → produces `plan.md` |
-| 6 | `plan-review-to-spec` formula | Verifies plan covers spec → produces `plan-review.md` |
-| 7 | `beads-creation` formula | Converts plan into beads epic with validated dependencies |
-| 8 | `beads-review-to-plan` formula | 3-direction review verifying beads match the plan → produces `beads-review.md` |
+| 5-6 | `plan-writing` + `plan-review-to-spec` formulas | Deep codebase analysis, plan writing, and spec coverage verification → produces `plan.md` |
+| 7-8 | `beads-creation` + `beads-review-to-plan` formulas | Converts plan to beads epic, then 3-direction review verifying beads match the plan |
 | **9** | **`epic-delivery` plugin** | **Delivers the epic through polecats and the refinery** |
 
 Stages 1-8 handle *what to build* and verify it's captured correctly. This plugin handles *getting it built* through Gas Town's polecat infrastructure.
