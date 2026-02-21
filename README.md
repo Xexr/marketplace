@@ -12,6 +12,7 @@ Personal plugins and skills for Claude Code.
 | [Review Implementation](#review-implementation) | Multi-LLM implementation review for verifying code matches spec and tracking completion. |
 | [Beads Upstream Sync](#beads-upstream-sync) | Fork maintenance for beads - upstream sync, cherry-pick management, and branch cleanup. |
 | [Gastown Upstream Sync](#gastown-upstream-sync) | Fork maintenance for gastown - upstream sync, cherry-pick management, formula sync, and branch cleanup. |
+| [Epic Delivery](#epic-delivery) | Deliver beads epics through polecats and the refinery with wave-based dispatch, monitoring, and quality gates. |
 | [Gastown Rig Setup](#gastown-rig-setup) | Add Git repos as Gas Town rigs with Dolt-native beads, including .beads/ seeding workaround. |
 
 ## Installation
@@ -139,6 +140,49 @@ The plugin follows a rigorous six-phase process:
 | Command | Purpose |
 |---------|---------|
 | `/design-to-beads` | Convert a design document to beads issues |
+
+---
+
+### Epic Delivery
+
+Orchestrate full delivery of a beads epic through polecats, refinery, and integration branches. The crew member acts as dispatcher and monitor; polecats do the implementation work.
+
+**Install:**
+```
+/plugin install epic-delivery@xexr-marketplace
+```
+
+#### Where This Fits
+
+Epic delivery is the final stage of the design-to-delivery pipeline. The earlier stages live in the [gt-toolkit formulas](https://github.com/Xexr/gt-toolkit/tree/main/formulas):
+
+| Stage | Tool | Output |
+|-------|------|--------|
+| 1-4 | `spec-workflow` formula | `spec.md` |
+| 5 | `plan-writing` formula | `plan.md` |
+| 6 | `plan-review-to-spec` formula | `plan-review.md` |
+| 7 | `design-to-beads` plugin | Beads epic with validated dependencies |
+| **8** | **`epic-delivery` plugin** | **Delivered code on integration branch** |
+
+#### How It Works
+
+The plugin follows a four-phase process:
+
+1. **Setup** - Create or reuse integration branch and convoy. Gather all leaf beads (tasks, bugs, features, chores) for tracking.
+
+2. **Dispatch** - Find unblocked leaves via `bd ready`, sling to polecats respecting `max_polecats` limits. Dispatches in waves as dependencies resolve.
+
+3. **Monitor** - Check integration branch status (MR merges) and convoy progress at 2-minute intervals. Dispatch newly unblocked work when dependencies land. Escalate after 5 no-change cycles. Handoff to fresh session after 15 cycles.
+
+4. **Validation** - Verify integration branch, run quality gates (setup, types, lint, build, test), handle failures via bug-fix sub-epics, produce plan-vs-actual summary, and offer deep review via `review-implementation`.
+
+**Critical:** MR merge to the integration branch is the readiness signal, not bead closure. Polecats close beads on `gt done`, but the code hasn't landed until the refinery merges the MR.
+
+#### Commands
+
+| Command | Purpose |
+|---------|---------|
+| `/epic-delivery` | Deliver a beads epic through polecats and the refinery |
 
 ---
 
