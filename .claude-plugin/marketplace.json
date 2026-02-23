@@ -84,6 +84,28 @@
       },
       "source": "./plugins/gastown-rig-setup",
       "category": "productivity"
+    },
+    {
+      "name": "epic-delivery",
+      "description": "Orchestrate full delivery of a beads epic through polecats, refinery, and integration branches - the final stage of the design-to-delivery pipeline",
+      "version": "1.0.0",
+      "author": {
+        "name": "xexr",
+        "email": "xexr@xexr.com"
+      },
+      "source": "./plugins/epic-delivery",
+      "category": "productivity"
+    },
+    {
+      "name": "doctor-triage",
+      "description": "Diagnose and fix Gas Town and beads workspace health issues - runs gt/bd doctor, triages findings, auto-fixes what it can, and optionally captures upstream bugs as beads",
+      "version": "1.0.0",
+      "author": {
+        "name": "xexr",
+        "email": "xexr@xexr.com"
+      },
+      "source": "./plugins/doctor-triage",
+      "category": "productivity"
     }
   ]
 }

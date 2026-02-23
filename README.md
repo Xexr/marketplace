@@ -14,6 +14,7 @@ Personal plugins and skills for Claude Code.
 | [Gastown Upstream Sync](#gastown-upstream-sync) | Fork maintenance for gastown - upstream sync, cherry-pick management, formula sync, and branch cleanup. |
 | [Epic Delivery](#epic-delivery) | Deliver beads epics through polecats and the refinery with wave-based dispatch, monitoring, and quality gates. |
 | [Gastown Rig Setup](#gastown-rig-setup) | Add Git repos as Gas Town rigs with Dolt-native beads, including .beads/ seeding workaround. |
+| [Doctor Triage](#doctor-triage) | Diagnose and fix gt/bd workspace health issues with guided triage and optional upstream bug capture. |
 
 ## Installation
 
@@ -414,6 +415,44 @@ A 9-step process covering the full rig onboarding lifecycle:
 | Command | Purpose |
 |---------|---------|
 | `/gastown-rig-setup` | Add a new Git repository as a Gas Town rig |
+
+---
+
+### Doctor Triage
+
+Diagnose and fix Gas Town and beads workspace health issues. Runs `gt doctor` and `bd doctor`, triages findings, auto-fixes what it can, and optionally captures upstream bugs as beads.
+
+**Install:**
+```
+/plugin install doctor-triage@xexr-marketplace
+```
+
+#### The Core Principle
+
+Doctor output is noisy. Some findings are auto-fixable, some need manual investigation, some are false positives, and some reveal genuine upstream bugs. This skill triages each finding, applies fixes in the right order, and surfaces real bugs instead of burying them in terminal output.
+
+#### How It Works
+
+A five-step process covering diagnosis through optional upstream bug capture:
+
+1. **Pre-flight** - Check which tools (`gt`, `bd`) are available and constrain options accordingly
+2. **Diagnose** - Run `gt doctor -v` and/or `bd doctor -v`
+3. **Triage** - Categorize each finding as auto-fixable, manually fixable, or upstream bug
+4. **Fix** - Apply fixes in order, verify each one, run a final clean check
+5. **Reflect** - Review the full run for upstream bugs. If any found, offer to capture them as beads (opt-in, not assumed)
+
+#### Key Guardrails
+
+- No fix loops — investigates manually if `--fix` doesn't resolve on first pass
+- No daemon restarts unless diagnostic recommends it or user asks
+- Skips known false positives (e.g., `bd doctor` "No dolt database found" in server mode)
+- Upstream bug capture is opt-in — asks before filing anything
+
+#### Commands
+
+| Command | Purpose |
+|---------|---------|
+| `/doctor-triage` | Diagnose and fix workspace health issues |
 
 ## License
 

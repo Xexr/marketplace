@@ -1,0 +1,22 @@
+{
+  "name": "doctor-triage",
+  "version": "1.0.0",
+  "description": "Diagnose and fix Gas Town and beads workspace health issues. Runs gt doctor and bd doctor, interprets findings, auto-fixes what it can, and optionally captures upstream bugs as beads.",
+  "author": {
+    "name": "xexr",
+    "email": "xexr@xexr.com"
+  },
+  "homepage": "https://github.com/xexr/marketplace",
+  "repository": "https://github.com/xexr/marketplace",
+  "license": "MIT",
+  "keywords": [
+    "gas-town",
+    "beads",
+    "doctor",
+    "diagnostics",
+    "health-check",
+    "triage",
+    "workspace",
+    "troubleshooting"
+  ]
+}
