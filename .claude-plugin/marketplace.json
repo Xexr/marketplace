@@ -106,6 +106,17 @@
       },
       "source": "./plugins/doctor-triage",
       "category": "productivity"
+    },
+    {
+      "name": "feature-branch-pr",
+      "description": "End-to-end workflow for creating feature branch PRs against upstream (steveyegge/beads or steveyegge/gastown) from your fork",
+      "version": "1.0.0",
+      "author": {
+        "name": "xexr",
+        "email": "xexr@xexr.com"
+      },
+      "source": "./plugins/feature-branch-pr",
+      "category": "productivity"
     }
   ]
 }

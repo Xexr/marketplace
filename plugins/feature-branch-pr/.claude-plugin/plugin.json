@@ -1,0 +1,23 @@
+{
+  "name": "feature-branch-pr",
+  "version": "1.0.0",
+  "description": "End-to-end workflow for creating feature branch PRs against upstream (steveyegge/beads or steveyegge/gastown) from your fork - branch creation, implementation, PR submission, cherry-pick to main, and rig clone updates.",
+  "author": {
+    "name": "xexr",
+    "email": "xexr@xexr.com"
+  },
+  "homepage": "https://github.com/xexr/marketplace",
+  "repository": "https://github.com/xexr/marketplace",
+  "license": "MIT",
+  "keywords": [
+    "beads",
+    "gastown",
+    "feature-branch",
+    "pull-request",
+    "fork",
+    "upstream",
+    "cherry-pick",
+    "git",
+    "go"
+  ]
+}
