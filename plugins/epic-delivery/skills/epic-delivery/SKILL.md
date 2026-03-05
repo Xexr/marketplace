@@ -32,8 +32,9 @@ The target rig is auto-detected from your current workspace.
 
 Some epics span multiple rigs (e.g., petals + node0 + lora_forge). Leaf beads live in different rig databases with different prefixes (e.g., `pe-`, `no-`, `lf-`). Cross-rig mode is **auto-detected** — if leaf beads have mixed prefixes, the skill switches to cross-rig handling:
 
-- **Integration branches:** one per rig (each rig's refinery merges its own MRs)
-- **Dispatch:** each leaf is slung to the rig that owns it (determined by prefix → `~/gt/.beads/routes.jsonl`)
+- **Local epics:** a local epic is created in each secondary rig so `gt mq integration create` works natively
+- **Integration branches:** one per rig via `gt mq integration create` (never manual git branches)
+- **Dispatch:** each leaf is slung to the rig that owns it with `--epic <local-epic-id>`
 - **Monitoring:** all rigs' integration statuses are checked each cycle
 - **Validation:** quality gates run per rig on each integration branch
 
@@ -182,32 +183,46 @@ gt mq integration status <epic-id>
 gt mq integration create <epic-id>
 ```
 
-**Cross-rig:** Create one integration branch **per rig**. Each rig's refinery manages its own merge queue independently.
+**Cross-rig:** Each rig needs its own local epic and its own integration branch. Do NOT create manual git branches — use `gt mq integration create` in every rig.
+
+1. **Create a local epic in each secondary rig:**
 
 ```bash
-# For each rig in the rig map, cd to that rig's beads path and create an integration branch
-# The epic bead may only exist in the primary rig's DB, so use the root epic ID
-
-# Primary rig (where the root epic lives):
-gt mq integration create <epic-id>
-
-# For each secondary rig: create a local integration branch
-# (The secondary rig won't have the epic in its DB, so create the branch manually)
+# For each secondary rig (i.e., every rig except the primary where the root epic lives):
 cd <secondary-rig-path>
-git checkout -b integration/<epic-id> main
-git push -u origin integration/<epic-id>
+bd create "<root-epic-title>: <rig-name> component" -t epic -p <priority> \
+  -d "Local epic for <rig-name> components of <root-epic-title>. Cross-rig root: <root-epic-id> in <primary-rig>."
+# Returns: <local-epic-id>
 ```
 
-Record the integration branch name per rig:
+2. **Re-parent the secondary rig's tasks under the local epic:**
+
+```bash
+# For each task in this rig (identified by prefix in the rig map):
+bd dep add <task-id> <local-epic-id> --type parent-child
+```
+
+3. **Create integration branches using `gt mq integration create` in every rig:**
+
+```bash
+# Primary rig (where the root epic lives):
+gt mq integration create <root-epic-id>
+
+# Each secondary rig:
+cd <secondary-rig-path>
+gt mq integration create <local-epic-id>
+```
+
+Record the integration branch name and local epic ID per rig:
 
 ```
 Integration Branches:
-  petals: integration/pe-k0e (primary — gt mq managed)
-  node0:  integration/pe-k0e (manual — local branch)
-  lora_forge: integration/pe-k0e (manual — local branch)
+  petals: integration/pe-k0e (primary — root epic pe-k0e, gt mq managed)
+  node0:  integration/no-xyz (local epic no-xyz, gt mq managed)
+  lora_forge: integration/lf-abc (local epic lf-abc, gt mq managed)
 ```
 
-The branch name follows the rig's `merge_queue.integration_branch_template` setting (default: `integration/{epic}`).
+The branch name follows each rig's `merge_queue.integration_branch_template` setting (default: `integration/{epic}`).
 
 ### 1f. Create Convoy
 
@@ -280,17 +295,17 @@ gt sling <leaf-1> <rig> --no-convoy
 gt sling <leaf-2> <rig> --no-convoy
 ```
 
-**Cross-rig:** Sling each leaf to the rig that owns it (from the rig map in Phase 1d):
+**Cross-rig:** Sling each leaf to the rig that owns it (from the rig map in Phase 1d). Use `--epic <local-epic-id>` so the sling targets the correct rig's integration branch:
 
 ```bash
-# Leaves are slung to their owning rig, NOT all to one rig
-gt sling pe-k0e.1.1 petals --no-convoy    # pe- prefix → petals
-gt sling pe-k0e.1.2 petals --no-convoy
-gt sling no-r2l node0 --no-convoy          # no- prefix → node0
-gt sling lf-mx5rb lora_forge --no-convoy   # lf- prefix → lora_forge
+# Leaves are slung to their owning rig with that rig's local epic
+gt sling pe-k0e.1.1 petals --no-convoy --epic <petals-root-epic-id>       # primary rig uses root epic
+gt sling pe-k0e.1.2 petals --no-convoy --epic <petals-root-epic-id>
+gt sling no-r2l node0 --no-convoy --epic <node0-local-epic-id>             # secondary rig uses LOCAL epic
+gt sling lf-mx5rb lora_forge --no-convoy --epic <lora-forge-local-epic-id>  # secondary rig uses LOCAL epic
 ```
 
-**Critical: match bead prefix to rig.** A `no-` bead MUST be slung to node0 (where its beads DB entry lives). Slinging to the wrong rig causes the polecat to not find the bead.
+**Critical: match bead prefix to rig AND use the correct epic.** A `no-` bead MUST be slung to node0 with `--epic <node0-local-epic-id>` (not the root epic). Slinging to the wrong rig causes the polecat to not find the bead. Using the wrong epic causes the MR to target the wrong integration branch.
 
 `gt sling` auto-targets the integration branch when the parent epic has one. Each leaf gets its own polecat. Respect each rig's `max_polecats` — don't sling more than a rig allows.
 
@@ -329,13 +344,11 @@ Each cycle:
    gt mq integration status <epic-id>
    ```
 
-   **Cross-rig:** Check each rig's integration branch:
+   **Cross-rig:** Check each rig's integration branch using its local epic:
 
    ```bash
    # For each rig in the rig map:
-   cd <rig-path> && gt mq integration status <epic-id>
-   # Or for manually-created branches:
-   cd <rig-path> && git log integration/<epic-id> --oneline -5
+   cd <rig-path> && gt mq integration status <local-epic-id>
    ```
 
    Aggregate merged MR counts across all rigs. Track per-rig progress.
@@ -364,17 +377,22 @@ Each cycle:
 
 **"All done" means:** every leaf task's MR has been merged to its rig's integration branch. Do NOT rely on bead status alone.
 
+**Single-rig:**
+
 ```bash
 # Primary: check integration branch for all expected MRs merged
-# Single-rig:
 gt mq integration status <epic-id>
-
-# Cross-rig: check each rig's integration branch
-# All rigs must show no pending MRs for their respective leaves
 
 # Secondary: check for any leaves still open/in_progress (exclude epics by type)
 bd list --parent <epic-id> --status open --limit 0 --json
 bd list --parent <epic-id> --status in_progress --limit 0 --json
+```
+
+**Cross-rig:** Check each rig's integration status using its local epic:
+
+```bash
+# For each rig in the rig map:
+cd <rig-path> && gt mq integration status <local-epic-id>
 ```
 
 **Both conditions must be true:** all rigs' integration statuses show their MRs merged (no pending), AND no open/in_progress leaf tasks remain. If pending MRs still exist in any rig, wait — that rig's refinery hasn't finished processing.
@@ -408,6 +426,7 @@ Epic: <epic-id>
 Convoy: <convoy-id>
 Cross-rig: <yes/no>
 Rig map: <prefix>:<rig-name> (e.g., pe:petals, no:node0, lf:lora_forge)
+Local epics: <rig-name>: <local-epic-id> (e.g., node0: no-xyz, lora_forge: lf-abc)
 Integration branches:
   <rig1>: <branch-name> (N merged, M pending)
   <rig2>: <branch-name> (N merged, M pending)
@@ -567,13 +586,11 @@ Triggered when all convoy leaves are closed or deferred.
 gt mq integration status <epic-id>
 ```
 
-**Cross-rig:** Verify each rig's integration branch:
+**Cross-rig:** Verify each rig's integration branch using its local epic:
 
 ```bash
 # For each rig in the rig map:
-cd <rig-path> && gt mq integration status <epic-id>
-# Or for manually-created branches:
-cd <rig-path> && git log integration/<epic-id> --oneline
+cd <rig-path> && gt mq integration status <local-epic-id>
 ```
 
 Confirm all expected work has landed on every rig. If any MRs are still pending in any rig's refinery queue, wait for them before proceeding.
@@ -595,7 +612,7 @@ gt rig settings show <rig>
 ```bash
 # For each rig in the rig map:
 cd <rig-path>
-git checkout integration/<epic-id>
+git checkout integration/<local-epic-id>
 git pull
 gt rig settings show <rig-name>
 # Run configured gates for this rig
@@ -679,7 +696,7 @@ When all quality gates pass:
 
    ```bash
    # For each rig:
-   cd <rig-path> && git diff main...integration/<epic-id> --stat
+   cd <rig-path> && git diff main...integration/<local-epic-id> --stat
    ```
 
 3. **Produce a summary mapping** each acceptance criterion to the task that delivered it:
@@ -797,9 +814,10 @@ Cross-rig:
 | Confusing commits ahead with MRs merged | Commits ahead is always higher (merge commits, multi-commit branches, refinery fixes). Track merged MR count |
 | Ignoring orphaned polecat branches | If polecat exits without `gt done`, check for branch with code. Manually submit via `gt mq submit --branch ... --issue ... --epic ... --no-cleanup` |
 | Stale beads blocking dependents | MR merged but bead still open? Force-close with `bd close <id> --force` |
-| Stale beads blocking dependents | MR merged but bead still open? Force-close with `bd close <id> --force` |
+| Creating manual git branches for cross-rig | NEVER create manual branches. Create a local epic per secondary rig and use `gt mq integration create` in every rig |
 | Slinging cross-rig bead to wrong rig | Match bead prefix to rig via routes.jsonl. A `no-` bead MUST go to node0, not petals |
-| Single integration branch for cross-rig | Each rig needs its own integration branch — each rig's refinery merges independently |
+| Using root epic ID in secondary rigs | Secondary rigs need their own local epic. Use `--epic <local-epic-id>` when slinging to secondary rigs |
+| Single integration branch for cross-rig | Each rig needs its own local epic + integration branch — each rig's refinery merges independently |
 | Ignoring cross-rig mode detection | Always check leaf prefixes after gathering. Mixed prefixes = cross-rig = different handling |
 | Running gates on only one rig | Cross-rig: run quality gates per rig on each rig's integration branch |
 | Landing one rig without coordinating | If rigs depend on each other at runtime, coordinate landing order |
