@@ -28,6 +28,16 @@ Orchestrate full delivery of a beads epic through polecats, refinery, and integr
 
 The target rig is auto-detected from your current workspace.
 
+### Cross-Rig Projects
+
+Some epics span multiple rigs (e.g., petals + node0 + lora_forge). Leaf beads live in different rig databases with different prefixes (e.g., `pe-`, `no-`, `lf-`). Cross-rig mode is **auto-detected** — if leaf beads have mixed prefixes, the skill switches to cross-rig handling:
+
+- **Integration branches:** one per rig (each rig's refinery merges its own MRs)
+- **Dispatch:** each leaf is slung to the rig that owns it (determined by prefix → `~/gt/.beads/routes.jsonl`)
+- **Monitoring:** all rigs' integration statuses are checked each cycle
+- **Validation:** quality gates run per rig on each integration branch
+
+Single-rig epics (all leaves share one prefix) work exactly as before — no changes needed
 ---
 
 ## Process Overview
@@ -126,19 +136,7 @@ bd show <epic-id> --json | python3 -c "import json,sys; d=json.load(sys.stdin)[0
 bd update <epic-id> -t epic
 ```
 
-### 1c. Create or Verify Integration Branch
-
-```bash
-# Check if integration branch already exists
-gt mq integration status <epic-id>
-
-# If none exists, create one
-gt mq integration create <epic-id>
-```
-
-The branch name follows the rig's `merge_queue.integration_branch_template` setting (default: `integration/{epic}`). Record the branch name for use in Phase 4.
-
-### 1d. Gather Leaf Beads
+### 1c. Gather Leaf Beads
 
 Collect all implementable children — exclude epics and sub-epics.
 
@@ -151,10 +149,70 @@ bd list --parent <epic-id> --all --limit 0 --json
 
 **Cross-sub-epic dependencies are bead-to-bead, not epic-scoped.** If `gt-b2` depends on `gt-a1` (from a different sub-epic), `bd ready` correctly resolves this because dependencies reference bead IDs directly, not their parent epics.
 
-### 1e. Create Convoy
+### 1d. Detect Cross-Rig Mode
+
+Extract the bead prefix from each leaf ID (the characters before the first `-` and number, e.g., `pe-` from `pe-k0e.3.1`, `no-` from `no-r2l`). If all leaves share the same prefix, this is a **single-rig project** — proceed normally. If leaves have **mixed prefixes**, this is a **cross-rig project**.
 
 ```bash
-# Create convoy with all leaf bead IDs (NOT epic/sub-epic IDs)
+# Build a rig map from bead prefixes using routes.jsonl
+# Each line in routes.jsonl maps: {"prefix": "pe", "path": "/home/ubuntu/gt/petals/mayor/rig"}
+cat ~/gt/.beads/routes.jsonl
+```
+
+Build a **rig map** grouping leaves by their owning rig:
+
+```
+Rig Map:
+  petals (pe-): pe-k0e.1.1, pe-k0e.1.2, pe-k0e.1.3, pe-k0e.2.1, ...
+  node0 (no-):  no-r2l, no-2yg, no-kwx
+  lora_forge (lf-): lf-mx5rb, lf-ouk9x
+```
+
+Record this map — it drives all subsequent phases.
+
+**Single-rig shortcut:** If only one rig appears, skip all cross-rig handling. The rest of the skill works unchanged.
+
+### 1e. Create or Verify Integration Branches
+
+**Single-rig:** Create one integration branch as before:
+
+```bash
+gt mq integration status <epic-id>
+# If none exists:
+gt mq integration create <epic-id>
+```
+
+**Cross-rig:** Create one integration branch **per rig**. Each rig's refinery manages its own merge queue independently.
+
+```bash
+# For each rig in the rig map, cd to that rig's beads path and create an integration branch
+# The epic bead may only exist in the primary rig's DB, so use the root epic ID
+
+# Primary rig (where the root epic lives):
+gt mq integration create <epic-id>
+
+# For each secondary rig: create a local integration branch
+# (The secondary rig won't have the epic in its DB, so create the branch manually)
+cd <secondary-rig-path>
+git checkout -b integration/<epic-id> main
+git push -u origin integration/<epic-id>
+```
+
+Record the integration branch name per rig:
+
+```
+Integration Branches:
+  petals: integration/pe-k0e (primary — gt mq managed)
+  node0:  integration/pe-k0e (manual — local branch)
+  lora_forge: integration/pe-k0e (manual — local branch)
+```
+
+The branch name follows the rig's `merge_queue.integration_branch_template` setting (default: `integration/{epic}`).
+
+### 1f. Create Convoy
+
+```bash
+# Create convoy with ALL leaf bead IDs across all rigs (NOT epic/sub-epic IDs)
 gt convoy create "<epic-title> delivery" <leaf-id-1> <leaf-id-2> ... <leaf-id-n>
 ```
 
@@ -164,21 +222,25 @@ Record the convoy ID (e.g., `hq-cv-xyz`) — this is your persistent state track
 
 **Exclude already-closed leaves.** Some leaves may already be closed from prior work. Filter these out — adding closed beads to the convoy inflates the total count and confuses progress tracking.
 
----
+**Cross-rig note:** The convoy lives in HQ and tracks bead IDs regardless of which rig database they live in. Cross-rig bead IDs (e.g., `no-r2l`, `lf-mx5rb`) work natively in convoys.
 
 ## Phase 2: Dispatch
 
 ### 2a. Query Polecat Capacity
 
 ```bash
-# Get max polecats for the rig
+# Single-rig: check one rig
 gt rig config show <rig>
-# Look for max_polecats value (default: 10)
+
+# Cross-rig: check each rig in the rig map
+gt rig config show petals    # max_polecats for petals leaves
+gt rig config show node0     # max_polecats for node0 leaves
+gt rig config show lora_forge # max_polecats for lora_forge leaves
 ```
 
-**Note:** The rig enforces `max_polecats` at the infrastructure level. This limit covers ALL polecats in the rig — including ones you slung AND ones the refinery spawns for conflict resolution. Respect this limit — don't sling more than it allows.
+**Note:** Each rig enforces `max_polecats` independently. This limit covers ALL polecats in that rig — including ones you slung AND ones the refinery spawns for conflict resolution. Respect each rig's limit.
 
-### 2b. Ensure Daemon Is Running
+### 2b. Ensure Daemons Are Running
 
 The daemon manages polecat lifecycle and drives the refinery. Without it, polecats won't be monitored and MRs won't be processed.
 
@@ -187,6 +249,8 @@ gt daemon status
 # If not running:
 gt daemon start
 ```
+
+**Cross-rig note:** There is one daemon for the entire Gas Town workspace. It manages all rigs. You only need to start it once.
 
 ### 2c. Find Ready Work
 
@@ -198,27 +262,42 @@ bd ready --parent <epic-id> --json
 `bd ready` already excludes hooked, in_progress, blocked, and deferred beads. Only truly claimable work appears.
 
 **Filter results carefully:**
+
 - Exclude epics/sub-epics by type — only sling task, bug, feature, chore
-- Verify each result's ID is actually under the target epic (e.g., starts with the expected prefix) — `bd ready --parent` may return broader results than expected
+- Verify each result's ID is actually under the target epic — `bd ready --parent` may return broader results than expected
 - For Wave 2+: verify each task's dependencies have MRs merged to the integration branch (check `gt mq integration status`), not just that the dependency beads are closed
+
+**Cross-rig note:** `bd ready` resolves cross-rig dependencies natively. A `no-r2l` task blocked by `pe-k0e.1.3` will only appear in ready results after `pe-k0e.1.3` is closed.
 
 ### 2d. Sling Ready Leaves
 
 **Batch sling is currently broken.** Sling each leaf individually with `--no-convoy` (the convoy was already created in Phase 1):
 
+**Single-rig:**
+
 ```bash
-# Sling each leaf one at a time
 gt sling <leaf-1> <rig> --no-convoy
 gt sling <leaf-2> <rig> --no-convoy
-gt sling <leaf-3> <rig> --no-convoy
-# ... repeat for each ready leaf
 ```
 
-`gt sling` auto-targets the integration branch when the parent epic has one. Each leaf gets its own polecat. Respect `max_polecats` — don't sling more than the rig allows.
+**Cross-rig:** Sling each leaf to the rig that owns it (from the rig map in Phase 1d):
 
-**Report to user:** "Slung N tasks to <rig>: <list of task titles>"
+```bash
+# Leaves are slung to their owning rig, NOT all to one rig
+gt sling pe-k0e.1.1 petals --no-convoy    # pe- prefix → petals
+gt sling pe-k0e.1.2 petals --no-convoy
+gt sling no-r2l node0 --no-convoy          # no- prefix → node0
+gt sling lf-mx5rb lora_forge --no-convoy   # lf- prefix → lora_forge
+```
 
----
+**Critical: match bead prefix to rig.** A `no-` bead MUST be slung to node0 (where its beads DB entry lives). Slinging to the wrong rig causes the polecat to not find the bead.
+
+`gt sling` auto-targets the integration branch when the parent epic has one. Each leaf gets its own polecat. Respect each rig's `max_polecats` — don't sling more than a rig allows.
+
+**Report to user:**
+
+- Single-rig: "Slung N tasks to <rig>: <list>"
+- Cross-rig: "Slung N tasks across K rigs: <rig1>: <list>, <rig2>: <list>, ..."
 
 ## Phase 3: Monitor Loop
 
@@ -233,6 +312,7 @@ gt sling <leaf-3> <rig> --no-convoy
 **Commits ahead ≠ MRs merged.** The commit count is always higher because: polecats may make multiple commits per task, the refinery creates merge commits, and the refinery may add its own fix commits. Track the **merged MR count**, not the commit count.
 
 Sequence of events for each task:
+
 1. Polecat completes work → `gt done` → MR bead created, task bead may close
 2. Refinery picks up MR → reviews → merges to integration branch
 3. **Only now** is it safe to sling tasks that depend on this work
@@ -242,25 +322,39 @@ Sequence of events for each task:
 Each cycle:
 
 1. **Check integration branch status (primary signal):**
+
+   **Single-rig:**
+
    ```bash
    gt mq integration status <epic-id>
    ```
-   Track the count of merged MRs and pending MRs. New merges since last check = new work landed.
+
+   **Cross-rig:** Check each rig's integration branch:
+
+   ```bash
+   # For each rig in the rig map:
+   cd <rig-path> && gt mq integration status <epic-id>
+   # Or for manually-created branches:
+   cd <rig-path> && git log integration/<epic-id> --oneline -5
+   ```
+
+   Aggregate merged MR counts across all rigs. Track per-rig progress.
 
 2. **Check convoy status (secondary, for overall progress):**
+
    ```bash
    gt convoy status <convoy-id>
    ```
 
 3. **If new MRs merged since last check:**
-   - Report: "Landed on integration branch: <task-title> (N/total MRs merged)"
+   - Report: "Landed on integration branch: <task-title> on <rig> (N/total MRs merged)"
    - Check completion (see below)
    - If not all done: run `bd ready --parent <epic-id>` to find newly unblocked work
    - Cross-check: for each newly ready task, verify its dependencies' MRs have merged (check integration status merged list)
-   - If ready AND dependencies landed, sling it (Phase 2c)
+   - If ready AND dependencies landed, sling it to the **correct rig** (Phase 2d)
    - Reset no-change counter to 0
 
-4. **If no new MRs merged:**
+4. **If no new MRs merged (across all rigs):**
    - Increment no-change counter
    - If counter exceeds patience threshold (5 consecutive no-change cycles = ~10 min): escalate to user
 
@@ -268,18 +362,22 @@ Each cycle:
 
 ### Completion Check
 
-**"All done" means:** every leaf task's MR has been merged to the integration branch. Do NOT rely on bead status alone.
+**"All done" means:** every leaf task's MR has been merged to its rig's integration branch. Do NOT rely on bead status alone.
 
 ```bash
 # Primary: check integration branch for all expected MRs merged
+# Single-rig:
 gt mq integration status <epic-id>
+
+# Cross-rig: check each rig's integration branch
+# All rigs must show no pending MRs for their respective leaves
 
 # Secondary: check for any leaves still open/in_progress (exclude epics by type)
 bd list --parent <epic-id> --status open --limit 0 --json
 bd list --parent <epic-id> --status in_progress --limit 0 --json
 ```
 
-**Both conditions must be true:** integration status shows all MRs merged (no pending), AND no open/in_progress leaf tasks remain. If pending MRs still exist, wait — the refinery hasn't finished processing.
+**Both conditions must be true:** all rigs' integration statuses show their MRs merged (no pending), AND no open/in_progress leaf tasks remain. If pending MRs still exist in any rig, wait — that rig's refinery hasn't finished processing.
 
 If deferred tasks exist, note them — they'll appear in the completion report. Use `gt convoy close <convoy-id> --force` at the end since the convoy won't auto-close with deferred items.
 
@@ -293,6 +391,7 @@ Cycle 15 → check → handoff (if work still in flight)
 ```
 
 **Sleep implementation:**
+
 ```bash
 sleep 120  # 2 minutes between checks
 ```
@@ -307,11 +406,15 @@ IMPORTANT: Run Skill('epic-delivery') FIRST before doing anything else.
 
 Epic: <epic-id>
 Convoy: <convoy-id>
-Integration branch: <branch-name>
-Progress: N/total MRs merged to integration branch, M deferred, K in-flight
-Pending MRs: <list of pending MR bead IDs>
-Open leaves: <list of open leaf bead IDs>
-Active polecats: <count>
+Cross-rig: <yes/no>
+Rig map: <prefix>:<rig-name> (e.g., pe:petals, no:node0, lf:lora_forge)
+Integration branches:
+  <rig1>: <branch-name> (N merged, M pending)
+  <rig2>: <branch-name> (N merged, M pending)
+Progress: N/total MRs merged across all rigs, M deferred, K in-flight
+Pending MRs: <list of pending MR bead IDs with rig>
+Open leaves: <list of open leaf bead IDs with rig>
+Active polecats: <count per rig>
 Refinery re-assignments: <any noted>
 Last slung: <timestamp>
 No-change counter: <value>
@@ -396,6 +499,7 @@ The `--force` flag overrides open molecule wisp blockers. Only use this when you
 ### Truly Stuck (Escalate)
 
 **Detection:** No progress on a task for an extended period. Signs:
+
 - Polecat session is gone (crashed/killed) but bead still open
 - Bead in `in_progress` but no active polecat working on it
 - MR submitted but refinery not processing it
@@ -455,30 +559,51 @@ bd update <bead-id> --status deferred
 
 Triggered when all convoy leaves are closed or deferred.
 
-### 4a. Verify Integration Branch
+### 4a. Verify Integration Branches
+
+**Single-rig:**
 
 ```bash
 gt mq integration status <epic-id>
 ```
 
-Confirm all expected work has landed. If any MRs are still pending in the refinery queue, wait for them before proceeding.
+**Cross-rig:** Verify each rig's integration branch:
+
+```bash
+# For each rig in the rig map:
+cd <rig-path> && gt mq integration status <epic-id>
+# Or for manually-created branches:
+cd <rig-path> && git log integration/<epic-id> --oneline
+```
+
+Confirm all expected work has landed on every rig. If any MRs are still pending in any rig's refinery queue, wait for them before proceeding.
 
 ### 4b. Run Quality Gates
 
-**Always check out and pull the integration branch before running gates:**
+**Always check out and pull the integration branch before running gates.**
+
+**Single-rig:**
 
 ```bash
 git checkout <integration-branch>
 git pull
-```
-
-Read the rig's MQ settings to determine which gates are configured:
-
-```bash
 gt rig settings show <rig>
 ```
 
-Run each configured gate **in order**. Skip any that are empty/unconfigured:
+**Cross-rig:** Run quality gates **per rig** on each rig's integration branch:
+
+```bash
+# For each rig in the rig map:
+cd <rig-path>
+git checkout integration/<epic-id>
+git pull
+gt rig settings show <rig-name>
+# Run configured gates for this rig
+```
+
+Read each rig's MQ settings to determine which gates are configured:
+
+Run each configured gate **in order** per rig. Skip any that are empty/unconfigured:
 
 | Order | Setting | Run if |
 |-------|---------|--------|
@@ -488,7 +613,7 @@ Run each configured gate **in order**. Skip any that are empty/unconfigured:
 | 4 | `build_command` | Non-empty |
 | 5 | `test_command` | Non-empty |
 
-**Fail fast:** If any gate fails, stop and proceed to 4c.
+**Fail fast:** If any gate fails on any rig, stop and proceed to 4c. Report which rig failed.
 
 ### 4c. Handle Quality Gate Failures
 
@@ -510,7 +635,7 @@ AskUserQuestion:
    3. Skip and report as-is"
 ```
 
-3. If user approves bug-fix sub-epic:
+1. If user approves bug-fix sub-epic:
 
 ```bash
 # Create sub-epic under the main epic
@@ -524,7 +649,7 @@ bd create "Fix: <description of issue 2>" -t bug --parent <bugfix-epic-id>
 gt convoy add <convoy-id> <fix-1-id> <fix-2-id> ...
 ```
 
-4. **Resume from Phase 2.** The fix beads target the same integration branch. After fix polecats complete and the refinery merges their work, **re-run ALL quality gates from scratch** (not just the failed one) — earlier gates may have been affected by the fixes.
+1. **Resume from Phase 2.** The fix beads target the same integration branch. After fix polecats complete and the refinery merges their work, **re-run ALL quality gates from scratch** (not just the failed one) — earlier gates may have been affected by the fixes.
 
 **Remember to `git checkout <integration-branch> && git pull`** before re-running gates to pick up the new commits from fix polecats.
 
@@ -533,23 +658,28 @@ gt convoy add <convoy-id> <fix-1-id> <fix-2-id> ...
 When all quality gates pass:
 
 1. **Find the plan document.** Check for a plan file first — this is the authoritative source of requirements:
+
    ```bash
    # Check for plan.md in the plans folder (common locations)
    ls plans/ .beads/plans/ docs/plans/ 2>/dev/null
    # Look for files matching the epic name/ID
    ```
+
    If a plan.md exists, read it and use it as the primary reference for acceptance criteria.
 
-   **If no plan file exists**, fall back to the beads themselves:
-   ```bash
-   bd show <epic-id>
-   # Read each leaf task's acceptance criteria
-   bd list --parent <epic-id> --all --limit 0 --json
-   ```
-
 2. **Read the integration branch diff** vs main:
+
+   **Single-rig:**
+
    ```bash
    git diff main...<integration-branch> --stat
+   ```
+
+   **Cross-rig:** Read diff per rig:
+
+   ```bash
+   # For each rig:
+   cd <rig-path> && git diff main...integration/<epic-id> --stat
    ```
 
 3. **Produce a summary mapping** each acceptance criterion to the task that delivered it:
@@ -558,18 +688,24 @@ When all quality gates pass:
 Epic <epic-id> delivery complete.
 
 Convoy: <convoy-id> — N leaves closed, M deferred (skipped)
-Integration branch: <branch-name> — all quality gates pass
+Rigs involved: <list of rigs> (or "single-rig" if not cross-rig)
+Integration branches: <branch per rig> — all quality gates pass
 
 ## Plan vs Actual
-- [criteria 1]: Met (implemented in <task-id>)
-- [criteria 2]: Met (implemented in <task-id>)
+- [criteria 1]: Met (implemented in <task-id> on <rig>)
+- [criteria 2]: Met (implemented in <task-id> on <rig>)
 - [criteria 3]: Partial — <explanation of gap>
+
+## Per-Rig Summary (cross-rig only)
+- petals: N tasks, M MRs merged, K files changed
+- node0: N tasks, M MRs merged, K files changed
+- lora_forge: N tasks, M MRs merged, K files changed
 
 ## Skipped Tasks (if any)
 - <bead-id>: <title> — deferred (reason: <why it was skipped>)
 
 ## Notes
-- <any important observations, e.g., refinery re-assignments, bug-fix rounds>
+- <any important observations, e.g., refinery re-assignments, bug-fix rounds, cross-rig dependency issues>
 ```
 
 ### 4e. Offer Deep Review
@@ -600,34 +736,41 @@ Skill(
 
 ```
 ## Next Steps
-The integration branch is validated. Typical next steps:
+The integration branch(es) are validated. Typical next steps:
+
+Single-rig:
 1. QA run (separate skill/process — test the integration branch before landing)
 2. Land to main: gt mq integration land <epic-id> (after QA passes)
+
+Cross-rig:
+1. QA run per rig (test each rig's integration branch)
+2. Land to main per rig: cd <rig-path> && gt mq integration land <epic-id>
+3. Coordinate landing order if rigs depend on each other at runtime
 ```
 
 **This skill ends here.** Landing to main happens after QA, not before. The integration branch is the staging area; landing is a separate deliberate act.
-
----
 
 ## Quick Reference
 
 | Phase | Key Command | What Happens |
 |-------|-------------|--------------|
 | Setup | `bd show <epic> --json` | Verify epic type before branch creation |
-| Setup | `gt mq integration create <epic>` | Creates integration branch |
+| Setup | `bd list --parent <epic> --all --limit 0 --json` | Gather leaves, detect cross-rig from prefixes |
+| Setup | `cat ~/gt/.beads/routes.jsonl` | Map bead prefixes to rig paths |
+| Setup | `gt mq integration create <epic>` | Creates integration branch (per rig for cross-rig) |
 | Setup | `gt convoy create "<name>" <ids...>` | Creates convoy tracker |
-| Dispatch | `bd ready --parent <epic>` | Finds unblocked leaves |
-| Dispatch | `gt sling <id> <rig> --no-convoy` | Sling one leaf at a time (batch broken) |
-| Monitor | `gt mq integration status <epic>` | **Primary signal:** checks merged MRs |
-| Monitor | `gt convoy status <convoy-id>` | Secondary: overall progress |
+| Dispatch | `bd ready --parent <epic>` | Finds unblocked leaves (cross-rig deps resolved natively) |
+| Dispatch | `gt sling <id> <rig> --no-convoy` | Sling leaf to its **owning rig** (match prefix to rig) |
+| Monitor | `gt mq integration status <epic>` | **Primary signal:** checks merged MRs (per rig for cross-rig) |
+| Monitor | `gt convoy status <convoy-id>` | Secondary: overall progress across all rigs |
 | Failure | `bd list --type merge-request --parent <epic>` | Check for conflict re-assignments |
 | Failure | `gt mq submit --branch <branch> --issue <id> --epic <epic> --no-cleanup` | Rescue orphaned polecat branch |
 | Failure | `bd close <id> --force` | Force-close stale bead (after MR merge confirmed) |
 | Skip | `bd update <id> --status deferred` | Skip a stuck task |
-| Validate | `gt mq integration status <epic>` | Verifies branch state |
-| Validate | `gt rig settings show <rig>` | Gets quality gate commands |
+| Validate | `gt mq integration status <epic>` | Verifies branch state (per rig for cross-rig) |
+| Validate | `gt rig settings show <rig>` | Gets quality gate commands (per rig) |
 | Review | `Skill("review-implementation", "<epic>")` | Multi-LLM deep review |
-| Complete | `gt mq integration land <epic>` | Merges integration to main |
+| Complete | `gt mq integration land <epic>` | Merges integration to main (per rig for cross-rig) |
 | Close | `gt convoy close <convoy-id> --force` | Close convoy (if deferred tasks exist) |
 
 ## Common Mistakes
@@ -654,3 +797,9 @@ The integration branch is validated. Typical next steps:
 | Confusing commits ahead with MRs merged | Commits ahead is always higher (merge commits, multi-commit branches, refinery fixes). Track merged MR count |
 | Ignoring orphaned polecat branches | If polecat exits without `gt done`, check for branch with code. Manually submit via `gt mq submit --branch ... --issue ... --epic ... --no-cleanup` |
 | Stale beads blocking dependents | MR merged but bead still open? Force-close with `bd close <id> --force` |
+| Stale beads blocking dependents | MR merged but bead still open? Force-close with `bd close <id> --force` |
+| Slinging cross-rig bead to wrong rig | Match bead prefix to rig via routes.jsonl. A `no-` bead MUST go to node0, not petals |
+| Single integration branch for cross-rig | Each rig needs its own integration branch — each rig's refinery merges independently |
+| Ignoring cross-rig mode detection | Always check leaf prefixes after gathering. Mixed prefixes = cross-rig = different handling |
+| Running gates on only one rig | Cross-rig: run quality gates per rig on each rig's integration branch |
+| Landing one rig without coordinating | If rigs depend on each other at runtime, coordinate landing order |
