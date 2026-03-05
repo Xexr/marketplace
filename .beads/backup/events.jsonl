@@ -1,2 +1,2 @@
-{"actor":"mayor","comment":null,"created_at":"2026-02-19T12:24:36Z","event_type":"created","id":5,"issue_id":"mp-rig-marketplace","new_value":"","old_value":""}
-{"actor":"mayor","comment":"Added label: gt:rig","created_at":"2026-02-19T12:24:36Z","event_type":"label_added","id":6,"issue_id":"mp-rig-marketplace","new_value":null,"old_value":null}
+{"actor":"mayor","comment":null,"created_at":"2026-03-06T03:46:44Z","event_type":"created","id":1,"issue_id":"mk-rig-marketplace","new_value":"","old_value":""}
+{"actor":"mayor","comment":"Added label: gt:rig","created_at":"2026-03-06T03:46:44Z","event_type":"label_added","id":2,"issue_id":"mk-rig-marketplace","new_value":null,"old_value":null}
