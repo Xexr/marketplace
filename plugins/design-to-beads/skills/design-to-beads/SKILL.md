@@ -53,15 +53,24 @@ Create a written draft:
 Epic: [Name]
   - Issue: [Title]
     Dependencies: [list or "none - can start immediately"]
+    Target Rig: [rig name — determined from file paths in the plan]
     Key details: [from source doc]
 ```
 
+**Target Rig (Cross-Rig Projects):**
+
+If the source document references files across multiple rigs (e.g., `petals/mayor/rig/src/...`, `node0/mayor/rig/src/...`, `lora_forge/mayor/rig/src/...`), determine each issue's target rig from the file paths it modifies. Use `~/gt/.beads/routes.jsonl` to map rig names to bead prefixes and beads paths.
+
+- If all issues target the same rig → **single-rig project** (no special handling needed)
+- If issues target different rigs → **cross-rig project** (affects Phase 5 execution)
+
 **Coverage matrix (REQUIRED):**
 ```
-Source Section → Beads Location
-────────────────────────────────
-"Phase 1.1 Stripe Setup" → Epic 1, Issue 1.1
-"Technical note: 30s timeout" → Issue 1.1 (acceptance criteria)
+Source Section → Beads Location              → Target Rig
+──────────────────────────────────────────────────────────
+"Phase 1.1 Stripe Setup" → Epic 1, Issue 1.1 → petals
+"Phase 3.1 Training Loop" → Epic 3, Issue 3.1 → node0
+"Technical note: 30s timeout" → Issue 1.1 (acceptance criteria) → petals
 ```
 
 **Every source section MUST appear.** Gaps = work not captured = failure.
@@ -86,7 +95,7 @@ Phase 3 (3 items) | 200 words     | 190 words    | ✓ OK
 **Pass 1: Completeness + Detail Density Review** (launch subagent with Task tool)
 
 Subagent mandate:
-> "Review this beads structure against the source document. Verify: (1) every actionable item has a corresponding issue, (2) every technical note is captured, (3) every acceptance criterion is attached, (4) coverage matrix has no gaps, (5) **detail density check: for each phase, compare word count of source vs beads - flag any phase where beads is <50% of source as SPARSE**. Report any missing content or sparse phases."
+> "Review this beads structure against the source document. Verify: (1) every actionable item has a corresponding issue, (2) every technical note is captured, (3) every acceptance criterion is attached, (4) coverage matrix has no gaps, (5) **detail density check: for each phase, compare word count of source vs beads - flag any phase where beads is <50% of source as SPARSE**, (6) **rig assignment check: if the coverage matrix has a Target Rig column, verify each issue's rig matches the file paths it modifies — flag any mismatch**. Report any missing content, sparse phases, or rig misassignments."
 
 **Detail density criteria for each issue:**
 - Description must be substantive (>50 words) OR source item was genuinely simple
@@ -132,6 +141,8 @@ Ready to create:
 - Y issues
 - Z blocking dependencies
 - W items ready immediately (parallel start)
+- Rigs involved: <list> (or "single-rig" if all same)
+- Cross-rig dependencies: N (dependencies spanning different rigs)
 
 Coverage: All N source sections mapped ✓
 
@@ -140,6 +151,11 @@ Detail Density:
   Phase 2: 600 → 550 words (92%) ✓
   Phase 3: 200 → 190 words (95%) ✓
   Overall: 1250 → 1120 words (90%) ✓
+
+Per-Rig Breakdown (cross-rig only):
+  petals: X epics, Y issues
+  node0: X epics, Y issues
+  lora_forge: X epics, Y issues
 
 Proceed with creation? [User must confirm]
 ```
@@ -151,6 +167,21 @@ Proceed with creation? [User must confirm]
 ### Phase 5: Execute
 
 Only after user confirmation:
+
+#### Step 0: Detect Cross-Rig Mode
+
+Check the coverage matrix for a Target Rig column. If all issues target the same rig (or no Target Rig column exists), this is a **single-rig project** — execute all `bd create` commands from cwd as before.
+
+If issues target different rigs, this is a **cross-rig project**. Build a rig map from `~/gt/.beads/routes.jsonl`:
+
+```bash
+# Each line maps: {"prefix": "pe", "path": "/home/ubuntu/gt/petals/mayor/rig"}
+cat ~/gt/.beads/routes.jsonl
+```
+
+Group issues by target rig. Each rig's beads must be created from that rig's beads path (so `bd create` picks up the correct prefix and database).
+
+#### Single-Rig Execution (unchanged)
 
 1. **Create epics first:**
    ```bash
@@ -183,6 +214,52 @@ Only after user confirmation:
    bd ready --json        # Check expected items ready
    ```
 
+#### Cross-Rig Execution
+
+1. **Create the root epic in the primary rig** (the rig you're running from):
+   ```bash
+   bd create "Epic title" -t epic -p <priority> -d "Description"
+   # Returns: <epic-id> (e.g., pe-k0e)
+   ```
+
+2. **Create sub-epics and issues per rig.** For each rig, `cd` to that rig's beads path before running `bd create`:
+   ```bash
+   # Primary rig (cwd) — create issues that belong here
+   bd create "Issue title" -t task -d "Description" \
+     --parent <epic-id> --acceptance "- [ ] Criterion 1"
+
+   # Secondary rig — cd to its beads path first
+   cd /home/ubuntu/gt/node0/mayor/rig
+   bd create "Issue title" -t task -d "Description" \
+     --acceptance "- [ ] Criterion 1"
+   # Returns: no-xxx (node0 prefix)
+
+   cd /home/ubuntu/gt/lora_forge/mayor/rig
+   bd create "Issue title" -t task -d "Description" \
+     --acceptance "- [ ] Criterion 1"
+   # Returns: lf-yyy (lora_forge prefix)
+   ```
+
+   **Note:** `--parent` only works within the same rig's database. For cross-rig parent-child relationships, use `bd dep add` after creation:
+   ```bash
+   bd dep add <child-id> <epic-id> --type parent-child
+   ```
+
+3. **Wire cross-rig dependencies** using full prefixed bead IDs:
+   ```bash
+   # Cross-rig deps work with full IDs regardless of cwd
+   bd dep add no-xxx pe-k0e.1.3    # node0 task blocked by petals task
+   bd dep add pe-k0e.4.1 no-xxx    # petals task blocked by node0 task
+   ```
+
+4. **Verify:**
+   ```bash
+   bd dep cycles          # Must return empty (checks across all rig DBs)
+   bd ready --json        # Check expected items ready
+   ```
+
+**Critical:** A bead's prefix is determined by which rig's beads path you run `bd create` from. A `no-` bead MUST be created from node0's beads path, not from petals. Creating from the wrong path gives the wrong prefix and puts the bead in the wrong database.
+
 ### Phase 6: Generate Report
 
 **A. Creation Summary**
@@ -190,17 +267,31 @@ Only after user confirmation:
 Created: X epics, Y issues
   Epic 1: [Name] (N issues)
   ...
+
+Cross-rig: <yes/no>
+Rigs involved: <list>
+Cross-rig dependencies: N
 ```
 
-**B. Dependency Graph** (show blocking relationships and parallel opportunities)
+**B. Bead ID Mapping** (especially important for cross-rig projects)
+```
+Issue Title                    | Bead ID    | Rig
+───────────────────────────────|────────────|──────────
+Async spec decode pipeline     | pe-k0e.1.1 | petals
+Distillation data generation   | no-r2l     | node0
+LoRA fine-tuning               | lf-mx5rb   | lora_forge
+```
 
-**C. Ready Work Queue** (items with no blockers)
+**C. Dependency Graph** (show blocking relationships and parallel opportunities; mark cross-rig deps)
 
-**D. Coverage Verification**
+**D. Ready Work Queue** (items with no blockers, with rig indicated)
+
+**E. Coverage Verification**
 ```
 Source sections: N
 Mapped to beads: N ✓
 Information loss: None
+Per-rig distribution: petals: X, node0: Y, lora_forge: Z
 ```
 
 ## Loophole Closures
@@ -223,6 +314,8 @@ Information loss: None
 
 **"I'll add more detail when implementing"** → WRONG. The beads issue IS the specification. If detail isn't in the issue, it's not in the spec. Capture it now or lose it.
 
+**"All beads can go in one rig"** → WRONG. If the plan references files in multiple rigs, each bead must be created from its target rig's beads path. Wrong rig = wrong prefix = wrong database = tasks invisible to the correct rig's agents.
+
 ## Common Mistakes
 
 | Mistake | Fix |
@@ -235,6 +328,10 @@ Information loss: None
 | Sparse descriptions (<50% density) | Compare word counts; flesh out before proceeding |
 | Skipping user checkpoint | Always get confirmation |
 | Rushing for time pressure | Quality over speed |
+| All beads in one rig for cross-rig project | Create each bead from its target rig's beads path (cd first) |
+| Wrong prefix on cross-rig bead | Prefix comes from cwd's routes.jsonl entry — cd to correct rig |
+| --parent across rig boundaries | Use `bd dep add <child> <parent> --type parent-child` instead |
+| Missing Target Rig in coverage matrix | Parse file paths from plan to determine each issue's rig |
 
 ## Quick Reference
 
