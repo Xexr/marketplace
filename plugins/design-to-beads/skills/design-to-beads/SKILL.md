@@ -222,28 +222,36 @@ Group issues by target rig. Each rig's beads must be created from that rig's bea
    # Returns: <epic-id> (e.g., pe-k0e)
    ```
 
-2. **Create sub-epics and issues per rig.** For each rig, `cd` to that rig's beads path before running `bd create`:
+2. **Create a local epic in each secondary rig, then create issues under it.** For each secondary rig, `cd` to that rig's beads path, create a local epic, then create tasks with `--parent` pointing to the local epic:
    ```bash
    # Primary rig (cwd) — create issues that belong here
    bd create "Issue title" -t task -d "Description" \
      --parent <epic-id> --acceptance "- [ ] Criterion 1"
 
-   # Secondary rig — cd to its beads path first
+   # For each secondary rig, create a local epic first
    cd /home/ubuntu/gt/node0/mayor/rig
+   bd create "<root-epic-title>: node0 component" -t epic -p <priority> \
+     -d "Local epic for node0 components. Cross-rig root: <root-epic-id> in <primary-rig>."
+   # Returns: <local-epic-id> (e.g., no-8gz)
+
+   # Now create tasks with --parent pointing to the LOCAL epic
    bd create "Issue title" -t task -d "Description" \
+     --parent <local-epic-id> \
      --acceptance "- [ ] Criterion 1"
    # Returns: no-xxx (node0 prefix)
 
    cd /home/ubuntu/gt/lora_forge/mayor/rig
+   bd create "<root-epic-title>: lora_forge component" -t epic -p <priority> \
+     -d "Local epic for lora_forge components. Cross-rig root: <root-epic-id> in <primary-rig>."
+   # Returns: lf-x12hk
+
    bd create "Issue title" -t task -d "Description" \
+     --parent lf-x12hk \
      --acceptance "- [ ] Criterion 1"
    # Returns: lf-yyy (lora_forge prefix)
    ```
 
-   **Note:** `--parent` only works within the same rig's database. For cross-rig parent-child relationships, use `bd dep add` after creation:
-   ```bash
-   bd dep add <child-id> <epic-id> --type parent-child
-   ```
+   **Note:** Each secondary rig has its own local epic. Use `--parent <local-epic-id>` when creating tasks in that rig. The local epic enables `gt mq integration create` to work natively — no manual branches needed.
 
 3. **Wire cross-rig dependencies** using full prefixed bead IDs:
    ```bash
@@ -271,6 +279,14 @@ Created: X epics, Y issues
 Cross-rig: <yes/no>
 Rigs involved: <list>
 Cross-rig dependencies: N
+```
+
+**A2. Local Epic Mapping** (cross-rig projects only)
+```
+Local Epics:
+  petals: pe-k0e (root)
+  node0: no-8gz (local)
+  lora_forge: lf-x12hk (local)
 ```
 
 **B. Bead ID Mapping** (especially important for cross-rig projects)
@@ -330,7 +346,7 @@ Per-rig distribution: petals: X, node0: Y, lora_forge: Z
 | Rushing for time pressure | Quality over speed |
 | All beads in one rig for cross-rig project | Create each bead from its target rig's beads path (cd first) |
 | Wrong prefix on cross-rig bead | Prefix comes from cwd's routes.jsonl entry — cd to correct rig |
-| --parent across rig boundaries | Use `bd dep add <child> <parent> --type parent-child` instead |
+| --parent across rig boundaries | Create a local epic per secondary rig; use `--parent <local-epic-id>` within each rig |
 | Missing Target Rig in coverage matrix | Parse file paths from plan to determine each issue's rig |
 
 ## Quick Reference
